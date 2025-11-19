@@ -12,6 +12,7 @@
     "test:journeys": "playwright test tests/journeys",
     "test:components": "playwright test tests/components",
     "test:validation": "playwright test tests/validation",
+    "test:api": "playwright test tests/api",
     "test:a11y": "playwright test tests/accessibility",
     "test:visual": "playwright test tests/visual",
     "test:smoke": "playwright test --grep @smoke",
