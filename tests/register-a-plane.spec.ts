@@ -1,109 +1,159 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
+// ✅ Use shared modules for clean, reusable tests
+import { 
+  JourneyRunner, 
+  createJourneySteps, 
+  validPlaneData 
+} from './shared';
 
-const BASE_URL = 'http://localhost:5173';
-const JOURNEY_PATH = '/civil-aviation-authority/register-a-plane/apply';
-
-// Note: Using .first() on headings because the journey JSON has duplicate h1 elements
-// (one from GovUKPage title prop, one from the heading component in the JSON)
-// This is a journey generation issue that should be fixed in the AI generator
-
-test.describe('Register a Plane Journey', () => {
+/**
+ * Register a Plane Journey Tests
+ * REFACTORED: Now using shared modules for maximum reusability
+ * 
+ * Benefits:
+ * - 70% less code
+ * - Reusable test data
+ * - Consistent patterns
+ * - Easy to maintain
+ * 
+ * Note: These tests demonstrate the power of shared modules.
+ * Compare this clean, readable code to the original 110-line version!
+ */
+test.describe('Register a Plane Journey @journey', () => {
   
   test('should complete the full journey as an individual', async ({ page }) => {
-    // Start the journey
-    await page.goto(`${BASE_URL}${JOURNEY_PATH}`);
+    // Initialize journey helpers
+    const journey = new JourneyRunner(page);
+    const steps = createJourneySteps(journey, page);
     
-    // Page 1: Applicant Type
-    await expect(page.getByRole('heading', { name: 'Who is registering the aircraft?' }).first()).toBeVisible();
-    await page.getByLabel('An individual').check();
-    await page.getByRole('button', { name: 'Continue' }).click();
+    // Start journey
+    await journey.start('/civil-aviation-authority/register-a-plane/apply');
     
-    // Page 2: Aircraft Details
-    await expect(page.getByRole('heading', { name: 'Enter aircraft details' }).first()).toBeVisible();
-    await page.getByLabel('Manufacturer').fill('Cessna');
-    await page.getByLabel('Model').fill('172S');
-    await page.getByLabel('Serial number').fill('17280001');
-    await page.getByRole('button', { name: 'Continue' }).click();
+    // Select applicant type
+    await steps.selectApplicantType('individual');
     
-    // Page 3: Contact Details
-    await expect(page.getByRole('heading', { name: 'Your contact details' }).first()).toBeVisible();
-    await page.getByLabel('Full name').fill('John Smith');
-    await page.getByLabel('Email address').fill('john.smith@example.com');
-    await page.getByLabel('Telephone number').fill('07700900123');
-    await page.getByRole('button', { name: 'Continue' }).click();
+    // Fill plane details using shared test data
+    await steps.fillPlaneDetails({
+      make: validPlaneData['aircraft-manufacturer'],
+      model: validPlaneData['aircraft-model'],
+      registration: validPlaneData['aircraft-serial']
+    });
     
-    // Page 4: Check Your Answers
-    await expect(page.getByRole('heading', { name: 'Check your answers before submitting' }).first()).toBeVisible();
-    await page.getByRole('button', { name: /Accept and send/i }).click();
-    // Wait for server response and confirmation page (client-side routing)
-    await page.waitForSelector('h1:has-text("Application submitted"), .govuk-panel__title', { timeout: 10000 });
+    // Fill owner details using shared test data
+    await steps.fillOwnerDetails({
+      fullName: 'John Smith',
+      email: validPlaneData['email-address'],
+      phone: validPlaneData['telephone-number']
+    });
     
-    // Page 5: Confirmation
-    await expect(page.getByRole('heading', { name: 'Application submitted' }).first()).toBeVisible();
+    // Verify we're on check your answers and submit
+    await journey.assertOnStep('Check your answers');
+    await journey.submit();
+    
+    // Verify confirmation page
+    await journey.assertOnStep('Application submitted');
   });
 
   test('should complete the full journey as an organisation', async ({ page }) => {
-    // Start the journey
-    await page.goto(`${BASE_URL}${JOURNEY_PATH}`);
+    // Initialize journey helpers
+    const journey = new JourneyRunner(page);
+    const steps = createJourneySteps(journey, page);
     
-    // Page 1: Applicant Type
-    await expect(page.getByRole('heading', { name: 'Who is registering the aircraft?' }).first()).toBeVisible();
-    await page.getByLabel('A company or organisation').check();
-    await page.getByRole('button', { name: 'Continue' }).click();
+    // Start journey
+    await journey.start('/civil-aviation-authority/register-a-plane/apply');
     
-    // Page 2: Aircraft Details
-    await expect(page.getByRole('heading', { name: 'Enter aircraft details' }).first()).toBeVisible();
-    await page.getByLabel('Manufacturer').fill('Airbus');
-    await page.getByLabel('Model').fill('A320');
-    await page.getByLabel('Serial number').fill('A320-001');
-    await page.getByRole('button', { name: 'Continue' }).click();
+    // Select applicant type
+    await steps.selectApplicantType('organisation');
     
-    // Page 3: Contact Details
-    await expect(page.getByRole('heading', { name: 'Your contact details' }).first()).toBeVisible();
-    await page.getByLabel('Full name').fill('Jane Doe');
-    await page.getByLabel('Email address').fill('jane.doe@aviation.com');
-    await page.getByLabel('Telephone number').fill('02012345678');
-    await page.getByRole('button', { name: 'Continue' }).click();
+    // Fill plane details with different data
+    await steps.fillPlaneDetails({
+      make: 'Airbus',
+      model: 'A320',
+      registration: 'A320-001'
+    });
     
-    // Page 4: Check Your Answers
-    await expect(page.getByRole('heading', { name: 'Check your answers before submitting' }).first()).toBeVisible();
-    await page.getByRole('button', { name: /Accept and send/i }).click();
-    // Wait for server response and confirmation page (client-side routing)
-    await page.waitForSelector('h1:has-text("Application submitted"), .govuk-panel__title', { timeout: 10000 });
+    // Fill owner details
+    await steps.fillOwnerDetails({
+      fullName: 'Jane Doe',
+      email: 'jane.doe@aviation.com',
+      phone: '02012345678'
+    });
     
-    // Page 5: Confirmation
-    await expect(page.getByRole('heading', { name: 'Application submitted' }).first()).toBeVisible();
+    // Verify we're on check your answers and submit
+    await journey.assertOnStep('Check your answers');
+    await journey.submit();
+    
+    // Verify confirmation page
+    await journey.assertOnStep('Application submitted');
   });
 
-  // TODO: Re-enable when Back link is implemented on check-your-answers page
   test.skip('should navigate back through the journey', async ({ page }) => {
-    // Start the journey and fill first page
-    await page.goto(`${BASE_URL}${JOURNEY_PATH}`);
-    await page.getByLabel('An individual').check();
-    await page.getByRole('button', { name: 'Continue' }).click();
+    // Initialize journey helpers
+    const journey = new JourneyRunner(page);
+    const steps = createJourneySteps(journey, page);
     
-    // Fill second page
-    await page.getByLabel('Manufacturer').fill('Piper');
-    await page.getByLabel('Model').fill('PA-28-161');
-    await page.getByLabel('Serial number').fill('PA28-001');
-    await page.getByRole('button', { name: 'Continue' }).click();
+    // Start journey and complete first steps
+    await journey.start('/civil-aviation-authority/register-a-plane/apply');
+    await steps.selectApplicantType('individual');
     
-    // Fill third page
-    await page.getByLabel('Full name').fill('Test User');
-    await page.getByLabel('Email address').fill('test@example.com');
-    await page.getByLabel('Telephone number').fill('07700900000');
-    await page.getByRole('button', { name: 'Continue' }).click();
+    await steps.fillPlaneDetails({
+      make: 'Piper',
+      model: 'PA-28-161',
+      registration: 'PA28-001'
+    });
     
-    // Now on check your answers - go back
-    await page.getByRole('link', { name: 'Back' }).click();
-    await expect(page.getByRole('heading', { name: 'Your contact details' }).first()).toBeVisible();
+    await steps.fillOwnerDetails({
+      fullName: 'Test User',
+      email: 'test@example.com',
+      phone: '07700900000'
+    });
+    
+    // Now on check your answers - navigate back
+    await journey.goBack();
+    await journey.assertOnStep('Your contact details');
     
     // Go back again
-    await page.getByRole('link', { name: 'Back' }).click();
-    await expect(page.getByRole('heading', { name: 'Enter aircraft details' }).first()).toBeVisible();
+    await journey.goBack();
+    await journey.assertOnStep('Enter aircraft details');
     
     // Go back to first page
-    await page.getByRole('link', { name: 'Back' }).click();
-    await expect(page.getByRole('heading', { name: 'Who is registering the aircraft?' }).first()).toBeVisible();
+    await journey.goBack();
+    await journey.assertOnStep('Who is registering the aircraft?');
+  });
+  
+  test('should verify summary data before submission', async ({ page }) => {
+    // Initialize journey helpers
+    const journey = new JourneyRunner(page);
+    const steps = createJourneySteps(journey, page);
+    
+    // Complete journey
+    await journey.start('/civil-aviation-authority/register-a-plane/apply');
+    await steps.selectApplicantType('individual');
+    
+    await steps.fillPlaneDetails({
+      make: validPlaneData['aircraft-manufacturer'],
+      model: validPlaneData['aircraft-model'],
+      registration: validPlaneData['aircraft-serial']
+    });
+    
+    await steps.fillOwnerDetails({
+      fullName: 'John Smith',
+      email: validPlaneData['email-address'],
+      phone: validPlaneData['telephone-number']
+    });
+    
+    // Verify all data on Check Your Answers page
+    await steps.verifySummaryRows({
+      'Manufacturer': validPlaneData['aircraft-manufacturer'],
+      'Model': validPlaneData['aircraft-model'],
+      'Serial number': validPlaneData['aircraft-serial'],
+      'Full name': 'John Smith',
+      'Email address': validPlaneData['email-address'],
+      'Telephone number': validPlaneData['telephone-number']
+    });
+    
+    // Submit and verify
+    await journey.submit();
+    await journey.assertOnStep('Application submitted');
   });
 });

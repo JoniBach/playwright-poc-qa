@@ -125,7 +125,7 @@ export class JourneySteps {
     };
 
     if (data.registration) {
-      formData['Registration'] = data.registration;
+      formData['Serial number'] = data.registration;
     }
 
     await this.runner.fillAndContinue(formData);
