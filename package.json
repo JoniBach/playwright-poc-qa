@@ -1,19 +1,29 @@
 {
   "name": "playwright-poc-qa",
   "version": "1.0.0",
-  "description": "",
+  "description": "Comprehensive Playwright QA test suite",
   "main": "index.js",
   "scripts": {
     "test": "playwright test",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
-    "test:report": "playwright show-report"
+    "test:debug": "playwright test --debug",
+    "test:report": "playwright show-report",
+    "test:journeys": "playwright test tests/journeys",
+    "test:components": "playwright test tests/components",
+    "test:validation": "playwright test tests/validation",
+    "test:a11y": "playwright test tests/accessibility",
+    "test:visual": "playwright test tests/visual",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:regression": "playwright test --grep @regression",
+    "test:ci": "playwright test --reporter=html,json"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.0",
     "@playwright/test": "^1.56.1",
     "@types/node": "^24.10.1"
   }

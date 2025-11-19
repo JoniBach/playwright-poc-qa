@@ -1,0 +1,72 @@
+{
+  "journeys": [
+    {
+      "id": "register-a-plane",
+      "name": "Register a Plane",
+      "path": "/civil-aviation-authority/register-a-plane/apply",
+      "steps": [
+        {
+          "name": "applicant-type",
+          "heading": "Who is registering the aircraft?",
+          "fields": [
+            {
+              "type": "radios",
+              "name": "applicant-type",
+              "options": ["An individual", "A company or organisation"]
+            }
+          ]
+        },
+        {
+          "name": "aircraft-details",
+          "heading": "Enter aircraft details",
+          "fields": [
+            {
+              "type": "text",
+              "name": "manufacturer",
+              "label": "Manufacturer"
+            },
+            {
+              "type": "text",
+              "name": "model",
+              "label": "Model"
+            },
+            {
+              "type": "text",
+              "name": "serial-number",
+              "label": "Serial number"
+            }
+          ]
+        },
+        {
+          "name": "contact-details",
+          "heading": "Your contact details",
+          "fields": [
+            {
+              "type": "text",
+              "name": "full-name",
+              "label": "Full name"
+            },
+            {
+              "type": "text",
+              "name": "email",
+              "label": "Email address"
+            },
+            {
+              "type": "text",
+              "name": "phone",
+              "label": "Telephone number"
+            }
+          ]
+        },
+        {
+          "name": "check-answers",
+          "heading": "Check your answers before submitting"
+        },
+        {
+          "name": "confirmation",
+          "heading": "Application submitted"
+        }
+      ]
+    }
+  ]
+}

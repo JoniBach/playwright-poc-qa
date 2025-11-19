@@ -1,0 +1,41 @@
+{
+  "users": [
+    {
+      "type": "individual",
+      "fullName": "John Smith",
+      "email": "john.smith@example.com",
+      "phone": "07700900123"
+    },
+    {
+      "type": "individual",
+      "fullName": "Jane Doe",
+      "email": "jane.doe@example.com",
+      "phone": "07700900456"
+    },
+    {
+      "type": "organisation",
+      "fullName": "Aviation Manager",
+      "email": "manager@aviation.com",
+      "phone": "02012345678",
+      "companyName": "Aviation Ltd",
+      "companyNumber": "12345678"
+    }
+  ],
+  "aircraft": [
+    {
+      "manufacturer": "Cessna",
+      "model": "172S",
+      "serialNumber": "17280001"
+    },
+    {
+      "manufacturer": "Piper",
+      "model": "PA-28-161",
+      "serialNumber": "PA28-001"
+    },
+    {
+      "manufacturer": "Airbus",
+      "model": "A320",
+      "serialNumber": "A320-001"
+    }
+  ]
+}
