@@ -1,8 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { AccessibilityHelper } from '../../helpers/AccessibilityHelper';
+// ✅ Use shared accessibility modules
+import { AccessibilityHelper } from '../shared/accessibility/helpers';
+import { assertNoViolations, assertKeyboardAccessible } from '../shared/accessibility/assertions';
 
 /**
  * Accessibility Tests - WCAG 2.1 AA Compliance
+ * NOW USING: Shared accessibility modules for maximum reusability
  */
 test.describe('WCAG 2.1 AA Compliance @a11y', () => {
   test('should have no accessibility violations on home page', async ({ page }) => {
@@ -11,7 +14,8 @@ test.describe('WCAG 2.1 AA Compliance @a11y', () => {
     await page.goto('/');
     const results = await a11y.scanWCAG_AA();
     
-    expect(results.violations).toEqual([]);
+    // ✅ Use shared assertion
+    assertNoViolations(results);
   });
 
   test('should have no violations on journey start page', async ({ page }) => {
@@ -25,7 +29,8 @@ test.describe('WCAG 2.1 AA Compliance @a11y', () => {
       console.log(a11y.formatViolations(results.violations));
     }
     
-    expect(results.violations).toEqual([]);
+    // ✅ Use shared assertion
+    assertNoViolations(results);
   });
 
   test('should support keyboard navigation', async ({ page }) => {
@@ -36,8 +41,8 @@ test.describe('WCAG 2.1 AA Compliance @a11y', () => {
     // Test tab navigation through interactive elements
     const focusableElements = await a11y.testKeyboardNavigation(5);
     
-    // Should have focusable elements
-    expect(focusableElements.length).toBeGreaterThan(0);
+    // ✅ Use shared assertion
+    assertKeyboardAccessible(focusableElements);
   });
 
   test('should have proper form labels', async ({ page }) => {
@@ -49,7 +54,8 @@ test.describe('WCAG 2.1 AA Compliance @a11y', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
     
     const results = await a11y.checkFormLabels();
-    expect(results.violations).toEqual([]);
+    // ✅ Use shared assertion
+    assertNoViolations(results);
   });
 
   test('should have sufficient color contrast', async ({ page }) => {
@@ -58,6 +64,7 @@ test.describe('WCAG 2.1 AA Compliance @a11y', () => {
     await page.goto('/civil-aviation-authority/register-a-plane/apply');
     const results = await a11y.checkColorContrast();
     
-    expect(results.violations).toEqual([]);
+    // ✅ Use shared assertion
+    assertNoViolations(results);
   });
 });

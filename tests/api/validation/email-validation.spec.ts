@@ -1,11 +1,19 @@
 import { test, expect } from '@playwright/test';
 import { createFormData, getMinimalValidData } from '../../../helpers/api-helpers';
+// ✅ Use shared validation modules
+import { 
+  assertValidationError, 
+  assertSuccessResponse,
+  assertGovUKErrorMessages 
+} from '../../shared/validation/assertions';
+import { invalidEmails, validEmails } from '../../shared/validation/fixtures';
 
 /**
  * API Email Validation Tests
  * Tests server-side email validation via direct API calls
  * 
  * NOTE: Server expects FormData (multipart/form-data), not JSON
+ * NOW USING: Shared validation modules for cleaner, reusable assertions
  */
 
 const BASE_URL = 'http://localhost:5173';
@@ -24,10 +32,8 @@ test.describe('API Email Validation @api', () => {
     expect(response.status()).toBe(400);
     const body = await response.json();
     
-    expect(body.success).toBe(false);
-    expect(body.errors).toBeDefined();
-    expect(body.errors['email-address']).toBeDefined();
-    expect(body.errors['email-address']).toContain('email address');
+    // ✅ Use shared assertion - cleaner and reusable!
+    assertValidationError(body, ['email-address']);
   });
   
   test('should accept valid email format', async ({ request }) => {
@@ -41,10 +47,8 @@ test.describe('API Email Validation @api', () => {
     expect(response.status()).toBe(200);
     const body = await response.json();
     
-    expect(body.success).toBe(true);
-    expect(body.complete).toBe(true);
-    expect(body.referenceNumber).toBeDefined();
-    expect(body.referenceNumber).toMatch(/^APP-[A-Z0-9]+-[A-Z0-9]+$/);
+    // ✅ Use shared assertion - validates structure and reference number format!
+    assertSuccessResponse(body, { expectReferenceNumber: true, expectComplete: true });
   });
   
   test('should reject email without @ symbol', async ({ request }) => {
@@ -76,14 +80,7 @@ test.describe('API Email Validation @api', () => {
   });
   
   test('should accept various valid email formats', async ({ request }) => {
-    const validEmails = [
-      'user@example.com',
-      'user.name@example.co.uk',
-      'user+tag@example.com',
-      'user_name@example.com',
-      'user123@example.com'
-    ];
-    
+    // ✅ Use shared fixtures instead of hardcoded values!
     for (const email of validEmails) {
       const data = getMinimalValidData({ 'email-address': email });
       const formData = createFormData(data);
