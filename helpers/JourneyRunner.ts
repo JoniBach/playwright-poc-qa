@@ -54,6 +54,24 @@ export class JourneyRunner {
   }
 
   /**
+   * Submit the journey from Check Your Answers page
+   * Handles the "Accept and send" button and waits for server response
+   * Note: Journey uses client-side routing, so we wait for content instead of URL change
+   */
+  async submit(): Promise<void> {
+    // Click "Accept and send" button
+    await this.page.getByRole('button', { name: /Accept and send|Continue/i }).click();
+    
+    // Wait for the confirmation page to load (client-side routing, URL doesn't change)
+    // Look for confirmation heading or panel
+    await this.page.waitForSelector('h1:has-text("Application submitted"), .govuk-panel__title', {
+      timeout: 10000
+    });
+    
+    this.currentStep++;
+  }
+
+  /**
    * Click the Back link
    */
   async goBack(): Promise<void> {

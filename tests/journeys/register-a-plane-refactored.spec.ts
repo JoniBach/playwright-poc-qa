@@ -42,7 +42,7 @@ test.describe('Register a Plane Journey - Refactored', () => {
     
     // Step 4: Check Answers
     await journeyRunner.verifyHeading('Check your answers before submitting');
-    await journeyRunner.continue();
+    await journeyRunner.submit();
     
     // Step 5: Confirmation
     await journeyRunner.verifyHeading('Application submitted');
@@ -78,7 +78,7 @@ test.describe('Register a Plane Journey - Refactored', () => {
     await journeyRunner.continue();
     
     await journeyRunner.verifyHeading('Check your answers before submitting');
-    await journeyRunner.continue();
+    await journeyRunner.submit();
     
     await journeyRunner.verifyHeading('Application submitted');
   });

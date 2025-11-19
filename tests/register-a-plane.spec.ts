@@ -34,7 +34,9 @@ test.describe('Register a Plane Journey', () => {
     
     // Page 4: Check Your Answers
     await expect(page.getByRole('heading', { name: 'Check your answers before submitting' }).first()).toBeVisible();
-    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.getByRole('button', { name: /Accept and send/i }).click();
+    // Wait for server response and confirmation page (client-side routing)
+    await page.waitForSelector('h1:has-text("Application submitted"), .govuk-panel__title', { timeout: 10000 });
     
     // Page 5: Confirmation
     await expect(page.getByRole('heading', { name: 'Application submitted' }).first()).toBeVisible();
@@ -65,7 +67,9 @@ test.describe('Register a Plane Journey', () => {
     
     // Page 4: Check Your Answers
     await expect(page.getByRole('heading', { name: 'Check your answers before submitting' }).first()).toBeVisible();
-    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.getByRole('button', { name: /Accept and send/i }).click();
+    // Wait for server response and confirmation page (client-side routing)
+    await page.waitForSelector('h1:has-text("Application submitted"), .govuk-panel__title', { timeout: 10000 });
     
     // Page 5: Confirmation
     await expect(page.getByRole('heading', { name: 'Application submitted' }).first()).toBeVisible();
