@@ -54,30 +54,48 @@ import { validHelicopterData } from '../shared/validation/fixtures';
 
 test('should complete journey', async ({ page }) => {
   // Mock API response
-  await page.route('**/apply?page=check-your-answers', mockSuccessfulSubmission);
   
-  // Fill form
-  await page.fill('[name="ownerEmail"]', validHelicopterData.ownerEmail);
-  
-  // Submit and verify
-  await page.click('text=Accept and send');
-  await expect(page.locator('text=Application complete')).toBeVisible();
+  await journey.start('/apply');
+  await steps.fillHelicopterDetails(validHelicopterData);
+  await steps.fillOwnerDetails(validHelicopterData);
+  await steps.reviewAndSubmit();
 });
 ```
 
-### **3. E2E Tests (Real API)**
-
+### **Complete E2E Test (All Modules)**
 ```typescript
-import { test, expect } from '@playwright/test';
-import { assertSuccessResponse } from '../shared/validation/assertions';
-import { validHelicopterData } from '../shared/validation/fixtures';
+import {
+  JourneyRunner,
+  ComponentHelper,
+  AccessibilityHelper,
+  assertNoViolations,
+  assertSuccessResponse,
+  validHelicopterData
+} from '../shared';
 
-test('should submit to real server', async ({ page, request }) => {
-  // Use real API (no mocking)
-  await page.fill('[name="ownerEmail"]', validHelicopterData.ownerEmail);
-  await page.click('text=Accept and send');
+test('complete E2E test', async ({ page, request }) => {
+  const journey = new JourneyRunner(page);
+  const components = new ComponentHelper(page);
+  const a11y = new AccessibilityHelper(page);
   
-  // Verify with shared assertion
+  // Start journey
+  await journey.start('/apply');
+  
+  // Check accessibility
+  const a11yResults = await a11y.scanWCAG_AA();
+  assertNoViolations(a11yResults);
+  
+  // Fill form with shared data
+  await components.fillTextInput('Email', validHelicopterData.ownerEmail);
+  await journey.continue();
+  
+  // Submit
+  await journey.submit();
+  
+  // Verify API
+  const response = await request.get('/api/submissions/latest');
+  const body = await response.json();
+  assertSuccessResponse(body, { expectReferenceNumber: true });
   await expect(page.locator('text=/APP-\\d+-[A-Z0-9]+/')).toBeVisible();
 });
 ```
