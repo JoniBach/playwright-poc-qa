@@ -30,7 +30,13 @@ export default defineConfig({
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+    
+    /* Set default timeout for actions */
+    actionTimeout: 2000,
   },
+  
+  /* Set timeout for component tests */
+  timeout: 5000,
 
   /* Configure projects for major browsers */
   projects: [

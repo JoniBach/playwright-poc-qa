@@ -11,6 +11,7 @@
     "test:report": "playwright show-report",
     "test:journeys": "playwright test tests/journeys",
     "test:components": "playwright test tests/components",
+    "test:components:list": "playwright test tests/components --grep @component --reporter=list",
     "test:validation": "playwright test tests/validation",
     "test:api": "playwright test tests/api",
     "test:a11y": "playwright test tests/accessibility",

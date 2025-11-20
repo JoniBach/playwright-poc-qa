@@ -224,14 +224,14 @@ export class ComponentHelper {
     legend: string,
     date: { day: string; month: string; year: string }
   ): Promise<void> {
-    // Find the date input container by its legend
-    const container = this.page.locator('.govuk-date-input', {
-      has: this.page.locator('legend', { hasText: legend })
+    // Find the fieldset by legend, then find the date input within it
+    const fieldset = this.page.locator('fieldset').filter({
+      has: this.page.locator('legend').filter({ hasText: legend })
     });
 
-    await container.getByLabel('Day').fill(date.day);
-    await container.getByLabel('Month').fill(date.month);
-    await container.getByLabel('Year').fill(date.year);
+    await fieldset.getByLabel('Day').fill(date.day);
+    await fieldset.getByLabel('Month').fill(date.month);
+    await fieldset.getByLabel('Year').fill(date.year);
   }
 
   /**
