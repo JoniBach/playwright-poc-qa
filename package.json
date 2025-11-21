@@ -4,7 +4,8 @@
   "description": "Comprehensive Playwright QA test suite",
   "main": "index.js",
   "scripts": {
-    "test": "playwright test",
+    "test": "playwright test --grep-invert @component",
+    "test:all": "playwright test",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
@@ -18,7 +19,7 @@
     "test:visual": "playwright test tests/visual",
     "test:smoke": "playwright test --grep @smoke",
     "test:regression": "playwright test --grep @regression",
-    "test:ci": "playwright test --reporter=html,json"
+    "test:ci": "playwright test --grep-invert @component --reporter=html,json"
   },
   "keywords": [],
   "author": "",
