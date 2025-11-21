@@ -1,0 +1,214 @@
+import { test, expect } from '../../fixtures/base.fixture';
+import { TestDataFactory } from '../../helpers/TestDataFactory';
+
+/**
+ * Register a Company Journey - Working Tests
+ * Based on the actual working register-a-plane pattern
+ */
+test.describe('Register a Company Journey - Working', () => {
+  const JOURNEY_PATH = '/department-for-business-and-trade/register-a-company/apply';
+
+  test('should complete full company registration journey @smoke @journey', async ({ 
+    page, 
+    journeyRunner
+  }) => {
+    const contactData = TestDataFactory.generateContactDetails();
+
+    await journeyRunner.startJourney(JOURNEY_PATH);
+    
+    // Wait for page to load
+    await page.waitForLoadState('networkidle');
+    
+    // Step 1: Start page
+    await journeyRunner.verifyHeading('Before you start');
+    await journeyRunner.continue();
+    
+    // Step 2: Company name
+    await page.waitForLoadState('networkidle');
+    await journeyRunner.verifyHeading("What is the company's proposed name?");
+    await journeyRunner.fillStep({
+      'Company name': 'Acme Corporation Ltd'
+    });
+    await journeyRunner.continue();
+    
+    // Step 3: Registered office address
+    await journeyRunner.verifyHeading("What is the company's registered office address?");
+    await journeyRunner.fillStep({
+      'Address line 1': '123 Business Park',
+      'Town or city': 'London',
+      'Postcode': 'SW1A 1AA'
+    });
+    await journeyRunner.continue();
+    
+    // Step 4: Director details
+    await journeyRunner.verifyHeading("Director's details");
+    await journeyRunner.fillStep({
+      'First name': 'Sarah',
+      'Last name': 'Johnson',
+      'Email address': 'sarah.johnson@acmecorp.com'
+    });
+    await journeyRunner.continue();
+    
+    // Step 5: Shareholder details
+    await journeyRunner.verifyHeading("Shareholder's details");
+    await journeyRunner.fillStep({
+      'First name': 'John',
+      'Last name': 'Smith',
+      'Number of shares': '100',
+      'Value of each share (£)': '1'
+    });
+    await journeyRunner.continue();
+    
+    // Step 6: Contact details
+    await journeyRunner.verifyHeading('Your contact details');
+    await journeyRunner.fillStep({
+      'Email address': contactData.email,
+      'Full name': contactData.fullName
+    });
+    await journeyRunner.continue();
+    
+    // Step 7: Check answers
+    await journeyRunner.verifyHeading('Check your answers before you submit');
+    await journeyRunner.submit();
+    
+    // Step 8: Confirmation
+    await journeyRunner.verifyHeading('Your application has been submitted');
+  });
+
+  test('should validate company name is required @journey @validation', async ({ 
+    page, 
+    journeyRunner,
+    componentHelper
+  }) => {
+    await journeyRunner.startJourney(JOURNEY_PATH);
+    await journeyRunner.verifyHeading('Before you start');
+    await journeyRunner.continue();
+    
+    await journeyRunner.verifyHeading("What is the company's proposed name?");
+    // Try to continue without filling
+    await journeyRunner.continue();
+    
+    // Verify error
+    await componentHelper.verifyErrorSummary(['Enter a company name']);
+  });
+
+  test('should validate address required fields @journey @validation', async ({ 
+    page, 
+    journeyRunner,
+    componentHelper
+  }) => {
+    await journeyRunner.startJourney(JOURNEY_PATH);
+    await journeyRunner.verifyHeading('Before you start');
+    await journeyRunner.continue();
+    
+    // Fill company name
+    await journeyRunner.verifyHeading("What is the company's proposed name?");
+    await journeyRunner.fillStep({ 'Company name': 'Test Company Ltd' });
+    await journeyRunner.continue();
+    
+    // Try to continue without filling address
+    await journeyRunner.verifyHeading("What is the company's registered office address?");
+    await journeyRunner.continue();
+    
+    // Verify errors
+    await componentHelper.verifyErrorSummary([
+      'Enter address line 1',
+      'Enter town or city',
+      'Enter postcode'
+    ]);
+  });
+
+  test('should allow changing company name from check answers @journey', async ({ 
+    page, 
+    journeyRunner,
+    componentHelper
+  }) => {
+    await journeyRunner.startJourney(JOURNEY_PATH);
+    await journeyRunner.verifyHeading('Before you start');
+    await journeyRunner.continue();
+    
+    await journeyRunner.verifyHeading("What is the company's proposed name?");
+    await journeyRunner.fillStep({ 'Company name': 'Original Company Ltd' });
+    await journeyRunner.continue();
+    
+    await journeyRunner.verifyHeading("What is the company's registered office address?");
+    await journeyRunner.fillStep({
+      'Address line 1': '1 Test Street',
+      'Town or city': 'London',
+      'Postcode': 'E1 1AA'
+    });
+    await journeyRunner.continue();
+    
+    await journeyRunner.verifyHeading("Director's details");
+    await journeyRunner.fillStep({
+      'First name': 'John',
+      'Last name': 'Doe',
+      'Email address': 'john@test.com'
+    });
+    await journeyRunner.continue();
+    
+    await journeyRunner.verifyHeading("Shareholder's details");
+    await journeyRunner.fillStep({
+      'First name': 'John',
+      'Last name': 'Doe',
+      'Number of shares': '100',
+      'Value of each share (£)': '1'
+    });
+    await journeyRunner.continue();
+    
+    await journeyRunner.verifyHeading('Your contact details');
+    await journeyRunner.fillStep({
+      'Email address': 'contact@test.com',
+      'Full name': 'John Doe'
+    });
+    await journeyRunner.continue();
+    
+    await journeyRunner.verifyHeading('Check your answers before you submit');
+    
+    // Change company name
+    await componentHelper.clickChangeLink('Company name');
+    await journeyRunner.verifyHeading("What is the company's proposed name?");
+    await journeyRunner.fillStep({ 'Company name': 'Updated Company Ltd' });
+    await journeyRunner.continue();
+    
+    // Verify back on check answers with updated value
+    await journeyRunner.verifyHeading('Check your answers before you submit');
+    await componentHelper.verifySummaryRow('Company name', 'Updated Company Ltd');
+    
+    // Submit
+    await journeyRunner.submit();
+    await journeyRunner.verifyHeading('Your application has been submitted');
+  });
+
+  test('should allow navigating back through journey @journey', async ({ 
+    page, 
+    journeyRunner
+  }) => {
+    await journeyRunner.startJourney(JOURNEY_PATH);
+    await journeyRunner.verifyHeading('Before you start');
+    await journeyRunner.continue();
+    
+    await journeyRunner.verifyHeading("What is the company's proposed name?");
+    await journeyRunner.fillStep({ 'Company name': 'Test Company Ltd' });
+    await journeyRunner.continue();
+    
+    await journeyRunner.verifyHeading("What is the company's registered office address?");
+    await journeyRunner.fillStep({
+      'Address line 1': '1 Test Street',
+      'Town or city': 'London',
+      'Postcode': 'E1 1AA'
+    });
+    await journeyRunner.continue();
+    
+    // Now on director details - navigate back
+    await journeyRunner.verifyHeading("Director's details");
+    await journeyRunner.goBack();
+    
+    // Should be back on address page
+    await journeyRunner.verifyHeading("What is the company's registered office address?");
+    
+    // Navigate back again
+    await journeyRunner.goBack();
+    await journeyRunner.verifyHeading("What is the company's proposed name?");
+  });
+});

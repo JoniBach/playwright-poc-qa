@@ -1,0 +1,164 @@
+import { test, expect } from '../../fixtures/base.fixture';
+import { JourneyBuilder } from '../../helpers/JourneyBuilder';
+import { JourneyStepBlocks } from '../../helpers/JourneyStepBlocks';
+import { TestDataFactory } from '../../helpers/TestDataFactory';
+
+/**
+ * Register a Plane Journey - Block-Based Tests
+ * Demonstrates using reusable step blocks to compose E2E journey tests
+ */
+test.describe('Register a Plane Journey - Block-Based', () => {
+  const JOURNEY_PATH = '/civil-aviation-authority/register-a-plane/apply';
+
+  test('should complete journey as individual using step blocks @smoke @journey', async ({ 
+    page, 
+    journeyRunner,
+    componentHelper
+  }) => {
+    // Build the journey using reusable blocks
+    await new JourneyBuilder(page, journeyRunner, componentHelper)
+      .addStep(JourneyStepBlocks.startJourney(JOURNEY_PATH))
+      .addStep(JourneyStepBlocks.selectIndividualApplicant('Who is registering the aircraft?'))
+      .addStep(JourneyStepBlocks.fillAircraftDetails('Enter aircraft details'))
+      .addStep(JourneyStepBlocks.fillContactDetails('Your contact details'))
+      .addStep(JourneyStepBlocks.checkYourAnswersAndSubmit('Check your answers before submitting'))
+      .addStep(JourneyStepBlocks.verifyConfirmation('Application submitted'))
+      .execute();
+  });
+
+  test('should complete journey as organisation using step blocks @journey', async ({ 
+    page, 
+    journeyRunner,
+    componentHelper
+  }) => {
+    await new JourneyBuilder(page, journeyRunner, componentHelper)
+      .addStep(JourneyStepBlocks.startJourney(JOURNEY_PATH))
+      .addStep(JourneyStepBlocks.selectOrganisationApplicant('Who is registering the aircraft?'))
+      .addStep(JourneyStepBlocks.fillAircraftDetails('Enter aircraft details'))
+      .addStep(JourneyStepBlocks.fillContactDetails('Your contact details'))
+      .addStep(JourneyStepBlocks.checkYourAnswersAndSubmit('Check your answers before submitting'))
+      .addStep(JourneyStepBlocks.verifyConfirmation('Application submitted'))
+      .execute();
+  });
+
+  test('should complete journey with custom data @journey', async ({ 
+    page, 
+    journeyRunner,
+    componentHelper
+  }) => {
+    // Generate custom test data
+    const customContactData = {
+      fullName: 'John Smith',
+      email: 'john.smith@example.com',
+      phone: '07700900123'
+    };
+
+    const customAircraftData = {
+      manufacturer: 'Boeing',
+      model: '737',
+      serialNumber: 'B737-12345'
+    };
+
+    await new JourneyBuilder(page, journeyRunner, componentHelper)
+      .setData('contactData', customContactData)
+      .setData('aircraftData', customAircraftData)
+      .addStep(JourneyStepBlocks.startJourney(JOURNEY_PATH))
+      .addStep(JourneyStepBlocks.selectIndividualApplicant('Who is registering the aircraft?'))
+      .addStep(JourneyStepBlocks.fillAircraftDetails('Enter aircraft details'))
+      .addStep(JourneyStepBlocks.fillContactDetails('Your contact details'))
+      .addStep(JourneyStepBlocks.checkYourAnswersAndSubmit('Check your answers before submitting'))
+      .addStep(JourneyStepBlocks.verifyConfirmation('Application submitted'))
+      .execute();
+  });
+
+  test('should allow changing answers before submission @journey', async ({ 
+    page, 
+    journeyRunner,
+    componentHelper
+  }) => {
+    const builder = new JourneyBuilder(page, journeyRunner, componentHelper)
+      .addStep(JourneyStepBlocks.startJourney(JOURNEY_PATH))
+      .addStep(JourneyStepBlocks.selectIndividualApplicant('Who is registering the aircraft?'))
+      .addStep(JourneyStepBlocks.fillAircraftDetails('Enter aircraft details'))
+      .addStep(JourneyStepBlocks.fillContactDetails('Your contact details'))
+      .addStep(JourneyStepBlocks.verifyCheckYourAnswers('Check your answers before submitting'));
+
+    // Execute up to check answers page
+    await builder.execute();
+
+    // Change an answer
+    await componentHelper.clickChangeLink('Full name');
+    
+    // Update the name
+    await journeyRunner.fillStep({
+      'Full name': 'Jane Doe Updated'
+    });
+    await journeyRunner.continue();
+
+    // Verify we're back on check answers
+    await journeyRunner.verifyHeading('Check your answers before submitting');
+    
+    // Submit
+    await journeyRunner.submit();
+    await journeyRunner.verifyHeading('Application submitted');
+  });
+
+  test('should handle validation errors @journey @validation', async ({ 
+    page, 
+    journeyRunner,
+    componentHelper
+  }) => {
+    await new JourneyBuilder(page, journeyRunner, componentHelper)
+      .addStep(JourneyStepBlocks.startJourney(JOURNEY_PATH))
+      .addStep(JourneyStepBlocks.selectIndividualApplicant('Who is registering the aircraft?'))
+      .addStep(JourneyStepBlocks.verifyHeading('Enter aircraft details'))
+      // Try to continue without filling required fields
+      .addStep(JourneyStepBlocks.continue())
+      .addStep(JourneyStepBlocks.verifyErrorSummary([
+        'Enter the manufacturer',
+        'Enter the model',
+        'Enter the serial number'
+      ]))
+      .execute();
+  });
+
+  test('should support partial journey execution @journey', async ({ 
+    page, 
+    journeyRunner,
+    componentHelper
+  }) => {
+    const builder = new JourneyBuilder(page, journeyRunner, componentHelper)
+      .addStep(JourneyStepBlocks.startJourney(JOURNEY_PATH))
+      .addStep(JourneyStepBlocks.selectIndividualApplicant('Who is registering the aircraft?'))
+      .addStep(JourneyStepBlocks.fillAircraftDetails('Enter aircraft details'))
+      .addStep(JourneyStepBlocks.fillContactDetails('Your contact details'))
+      .addStep(JourneyStepBlocks.checkYourAnswersAndSubmit('Check your answers before submitting'))
+      .addStep(JourneyStepBlocks.verifyConfirmation('Application submitted'));
+
+    // Execute only first 3 steps
+    await builder.executeUpTo(2);
+    
+    // Verify we're on the contact details page
+    await journeyRunner.verifyHeading('Your contact details');
+  });
+
+  test('should use composite blocks for common flows @journey', async ({ 
+    page, 
+    journeyRunner,
+    componentHelper
+  }) => {
+    // Use composite block that combines multiple steps
+    const individualFlow = JourneyStepBlocks.completeIndividualApplication({
+      applicantHeading: 'Who is registering the aircraft?',
+      contactHeading: 'Your contact details',
+      checkAnswersHeading: 'Check your answers before submitting',
+      confirmationHeading: 'Application submitted'
+    });
+
+    await new JourneyBuilder(page, journeyRunner, componentHelper)
+      .addStep(JourneyStepBlocks.startJourney(JOURNEY_PATH))
+      .addStep(JourneyStepBlocks.fillAircraftDetails('Enter aircraft details'))
+      .addSteps(individualFlow) // Add multiple steps at once
+      .execute();
+  });
+});

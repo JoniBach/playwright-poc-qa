@@ -72,10 +72,23 @@ export class JourneyRunner {
   }
 
   /**
-   * Click the Back link
+   * Click the Back link or button
    */
   async goBack(): Promise<void> {
-    await this.page.getByRole('link', { name: 'Back' }).click();
+    // Wait for page to be stable
+    await this.page.waitForLoadState('domcontentloaded');
+    
+    // Try button first (most common in GOV.UK forms)
+    const backButton = this.page.getByRole('button', { name: 'Back' });
+    const backButtonVisible = await backButton.isVisible().catch(() => false);
+    
+    if (backButtonVisible) {
+      await backButton.click();
+    } else {
+      // Fall back to link
+      await this.page.getByRole('link', { name: 'Back' }).click();
+    }
+    
     this.currentStep--;
   }
 
@@ -83,9 +96,36 @@ export class JourneyRunner {
    * Verify heading on current page
    */
   async verifyHeading(headingText: string): Promise<void> {
-    await expect(
-      this.page.getByRole('heading', { name: headingText }).first()
-    ).toBeVisible();
+    // Wait for page to be stable before checking heading
+    await this.page.waitForLoadState('networkidle');
+    // Wait for h1 to be present and visible
+    await this.page.waitForSelector('h1', { state: 'visible', timeout: 10000 });
+    
+    // Normalize apostrophes (handle smart quotes ' vs ')
+    // Replace smart quotes (') with standard apostrophes (')
+    // Using Unicode escape \u2019 for right single quotation mark
+    const normalizedText = headingText.replace(/[\u2018\u2019']/g, "'");
+    
+    // Get all h1 elements and check their text content
+    const h1Elements = await this.page.locator('h1').all();
+    let found = false;
+    
+    for (const h1 of h1Elements) {
+      const text = await h1.textContent();
+      const normalizedPageText = text?.replace(/[\u2018\u2019']/g, "'") || '';
+      
+      if (normalizedPageText.includes(normalizedText)) {
+        const isVisible = await h1.isVisible();
+        if (isVisible) {
+          found = true;
+          break;
+        }
+      }
+    }
+    
+    if (!found) {
+      throw new Error(`Heading "${headingText}" not found on page`);
+    }
   }
 
   /**

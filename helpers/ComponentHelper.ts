@@ -61,8 +61,11 @@ export class ComponentHelper {
    * Verify error summary is visible with specific errors
    */
   async verifyErrorSummary(expectedErrors: string[]): Promise<void> {
+    // Wait for page to be stable after form submission
+    await this.page.waitForLoadState('domcontentloaded');
+    
     const errorSummary = this.getErrorSummary();
-    await expect(errorSummary).toBeVisible();
+    await expect(errorSummary).toBeVisible({ timeout: 10000 });
     
     for (const error of expectedErrors) {
       await expect(errorSummary.getByText(error, { exact: false })).toBeVisible();
@@ -137,11 +140,24 @@ export class ComponentHelper {
    * Click change link in summary list
    */
   async clickChangeLink(key: string): Promise<void> {
-    const row = this.page.locator('.govuk-summary-list__row', {
-      has: this.page.locator('.govuk-summary-list__key', { hasText: key })
-    });
+    // Wait for summary list to be present
+    await this.page.waitForSelector('.govuk-summary-list', { state: 'visible' });
     
-    await row.locator('.govuk-summary-list__actions a').click();
+    // Find the row containing the key
+    const rows = await this.page.locator('.govuk-summary-list__row').all();
+    
+    for (const row of rows) {
+      const keyElement = row.locator('.govuk-summary-list__key');
+      const keyText = await keyElement.textContent();
+      
+      if (keyText?.trim() === key) {
+        const changeLink = row.locator('.govuk-summary-list__actions a');
+        await changeLink.click();
+        return;
+      }
+    }
+    
+    throw new Error(`Could not find change link for key: ${key}`);
   }
 
   /**

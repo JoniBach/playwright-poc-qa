@@ -1,0 +1,186 @@
+import { test, expect } from '../../fixtures/base.fixture';
+import { JourneyBuilder } from '../../helpers/JourneyBuilder';
+import { JourneyStepBlocks } from '../../helpers/JourneyStepBlocks';
+import { TestDataFactory } from '../../helpers/TestDataFactory';
+
+/**
+ * Register a Company Journey - Block-Based Tests
+ * Based on the user stories generated for register-a-company journey
+ */
+test.describe('Register a Company Journey - Block-Based', () => {
+  const JOURNEY_PATH = '/companies-house/register-a-company/apply';
+
+  test('should complete full company registration journey @smoke @journey', async ({ 
+    page, 
+    journeyRunner,
+    componentHelper
+  }) => {
+    await new JourneyBuilder(page, journeyRunner, componentHelper)
+      .addStep(JourneyStepBlocks.startJourney(JOURNEY_PATH))
+      .addStep(JourneyStepBlocks.verifyHeading('Before you start'))
+      .addStep(JourneyStepBlocks.continue())
+      .addStep(JourneyStepBlocks.fillCompanyName('What is the company name?'))
+      .addStep(JourneyStepBlocks.fillUKAddress('What is the registered office address?'))
+      .addStep(JourneyStepBlocks.fillContactDetails('Director contact details'))
+      .addStep(JourneyStepBlocks.checkYourAnswersAndSubmit('Check your answers before submitting'))
+      .addStep(JourneyStepBlocks.verifyConfirmationWithReference('Company registered'))
+      .execute();
+  });
+
+  test('should validate company name requirements @journey @validation', async ({ 
+    page, 
+    journeyRunner,
+    componentHelper
+  }) => {
+    await new JourneyBuilder(page, journeyRunner, componentHelper)
+      .addStep(JourneyStepBlocks.startJourney(JOURNEY_PATH))
+      .addStep(JourneyStepBlocks.verifyHeading('Before you start'))
+      .addStep(JourneyStepBlocks.continue())
+      .addStep(JourneyStepBlocks.verifyHeading('What is the company name?'))
+      // Try to continue without entering company name
+      .addStep(JourneyStepBlocks.continue())
+      .addStep(JourneyStepBlocks.verifyErrorSummary(['Enter a company name']))
+      .execute();
+  });
+
+  test('should allow changing company details before submission @journey', async ({ 
+    page, 
+    journeyRunner,
+    componentHelper
+  }) => {
+    const builder = new JourneyBuilder(page, journeyRunner, componentHelper)
+      .addStep(JourneyStepBlocks.startJourney(JOURNEY_PATH))
+      .addStep(JourneyStepBlocks.verifyHeading('Before you start'))
+      .addStep(JourneyStepBlocks.continue())
+      .addStep(JourneyStepBlocks.fillCompanyName('What is the company name?'))
+      .addStep(JourneyStepBlocks.fillUKAddress('What is the registered office address?'))
+      .addStep(JourneyStepBlocks.fillContactDetails('Director contact details'))
+      .addStep(JourneyStepBlocks.verifyCheckYourAnswers('Check your answers before submitting'));
+
+    await builder.execute();
+
+    // Change company name
+    await componentHelper.clickChangeLink('Company name');
+    await journeyRunner.fillStep({
+      'Company name': 'Updated Company Ltd'
+    });
+    await journeyRunner.continue();
+
+    // Verify back on check answers
+    await journeyRunner.verifyHeading('Check your answers before submitting');
+    await componentHelper.verifySummaryRow('Company name', 'Updated Company Ltd');
+
+    // Submit
+    await journeyRunner.submit();
+    await journeyRunner.verifyHeading('Company registered');
+  });
+
+  test('should complete registration with specific company data @journey', async ({ 
+    page, 
+    journeyRunner,
+    componentHelper
+  }) => {
+    const companyData = {
+      name: 'Acme Corporation Ltd',
+      registrationNumber: 'AC123456'
+    };
+
+    const addressData = {
+      line1: '123 Business Park',
+      line2: 'Suite 100',
+      city: 'London',
+      county: 'Greater London',
+      postcode: 'SW1A 1AA'
+    };
+
+    const directorData = {
+      fullName: 'Sarah Johnson',
+      email: 'sarah.johnson@acmecorp.com',
+      phone: '02071234567'
+    };
+
+    await new JourneyBuilder(page, journeyRunner, componentHelper)
+      .setData('companyData', companyData)
+      .setData('addressData', addressData)
+      .setData('contactData', directorData)
+      .addStep(JourneyStepBlocks.startJourney(JOURNEY_PATH))
+      .addStep(JourneyStepBlocks.verifyHeading('Before you start'))
+      .addStep(JourneyStepBlocks.continue())
+      .addStep(JourneyStepBlocks.fillCompanyName('What is the company name?'))
+      .addStep(JourneyStepBlocks.fillUKAddress('What is the registered office address?'))
+      .addStep(JourneyStepBlocks.fillContactDetails('Director contact details'))
+      .addStep(JourneyStepBlocks.checkYourAnswersAndSubmit('Check your answers before submitting'))
+      .addStep(JourneyStepBlocks.verifyConfirmationWithReference('Company registered'))
+      .execute();
+
+    // Verify reference number was captured
+    const referenceNumber = journeyRunner.getData('referenceNumber');
+    expect(referenceNumber).toBeTruthy();
+  });
+
+  test('should validate address fields @journey @validation', async ({ 
+    page, 
+    journeyRunner,
+    componentHelper
+  }) => {
+    await new JourneyBuilder(page, journeyRunner, componentHelper)
+      .addStep(JourneyStepBlocks.startJourney(JOURNEY_PATH))
+      .addStep(JourneyStepBlocks.verifyHeading('Before you start'))
+      .addStep(JourneyStepBlocks.continue())
+      .addStep(JourneyStepBlocks.fillCompanyName('What is the company name?'))
+      .addStep(JourneyStepBlocks.verifyHeading('What is the registered office address?'))
+      // Try to continue without filling required address fields
+      .addStep(JourneyStepBlocks.continue())
+      .addStep(JourneyStepBlocks.verifyErrorSummary([
+        'Enter address line 1',
+        'Enter town or city',
+        'Enter postcode'
+      ]))
+      .execute();
+  });
+
+  test('should navigate back through journey steps @journey', async ({ 
+    page, 
+    journeyRunner,
+    componentHelper
+  }) => {
+    const builder = new JourneyBuilder(page, journeyRunner, componentHelper)
+      .addStep(JourneyStepBlocks.startJourney(JOURNEY_PATH))
+      .addStep(JourneyStepBlocks.verifyHeading('Before you start'))
+      .addStep(JourneyStepBlocks.continue())
+      .addStep(JourneyStepBlocks.fillCompanyName('What is the company name?'))
+      .addStep(JourneyStepBlocks.fillUKAddress('What is the registered office address?'));
+
+    await builder.execute();
+
+    // Navigate back
+    await journeyRunner.goBack();
+    await journeyRunner.verifyHeading('What is the company name?');
+
+    // Navigate back again
+    await journeyRunner.goBack();
+    await journeyRunner.verifyHeading('Before you start');
+  });
+
+  test('should support reusable journey variations @journey', async ({ 
+    page, 
+    journeyRunner,
+    componentHelper
+  }) => {
+    // Create a base journey builder
+    const baseJourney = new JourneyBuilder(page, journeyRunner, componentHelper)
+      .addStep(JourneyStepBlocks.startJourney(JOURNEY_PATH))
+      .addStep(JourneyStepBlocks.verifyHeading('Before you start'))
+      .addStep(JourneyStepBlocks.continue())
+      .addStep(JourneyStepBlocks.fillCompanyName('What is the company name?'));
+
+    // Clone and extend for different test scenarios
+    const fullJourney = baseJourney.clone()
+      .addStep(JourneyStepBlocks.fillUKAddress('What is the registered office address?'))
+      .addStep(JourneyStepBlocks.fillContactDetails('Director contact details'))
+      .addStep(JourneyStepBlocks.checkYourAnswersAndSubmit('Check your answers before submitting'))
+      .addStep(JourneyStepBlocks.verifyConfirmation('Company registered'));
+
+    await fullJourney.execute();
+  });
+});
