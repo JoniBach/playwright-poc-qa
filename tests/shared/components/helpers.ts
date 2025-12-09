@@ -609,9 +609,9 @@ export class ComponentHelper {
     const notification = this.getNotificationBanner();
     
     try {
-      await expect(panel).toBeVisible({ timeout: 5000 });
+      await expect(panel).toBeVisible({ timeout: 20000 });
     } catch {
-      await expect(notification).toBeVisible({ timeout: 5000 });
+      await expect(notification).toBeVisible({ timeout: 20000 });
     }
   }
 

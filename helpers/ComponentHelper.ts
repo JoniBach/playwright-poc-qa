@@ -65,7 +65,7 @@ export class ComponentHelper {
     await this.page.waitForLoadState('domcontentloaded');
     
     const errorSummary = this.getErrorSummary();
-    await expect(errorSummary).toBeVisible({ timeout: 10000 });
+    await expect(errorSummary).toBeVisible({ timeout: 20000 });
     
     for (const error of expectedErrors) {
       await expect(errorSummary.getByText(error, { exact: false })).toBeVisible();

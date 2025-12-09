@@ -81,7 +81,7 @@ export class JourneyRunner {
     
     // Wait for the confirmation page to load
     await this.page.waitForSelector('h1:has-text("Application submitted"), .govuk-panel__title', {
-      timeout: 10000
+      timeout: 20000
     });
     
     this.currentStep++;

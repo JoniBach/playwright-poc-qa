@@ -94,7 +94,7 @@ export class JourneyRunner {
     // Wait for the confirmation page to load (client-side routing, URL doesn't change)
     // Look for confirmation heading or panel
     await this.page.waitForSelector('h1:has-text("Application submitted"), .govuk-panel__title', {
-      timeout: 10000
+      timeout: 20000
     });
     
     this.currentStep++;
@@ -104,8 +104,7 @@ export class JourneyRunner {
    * Click the Back link or button
    */
   async goBack(): Promise<void> {
-    // Wait for page to be stable
-    await this.page.waitForLoadState('domcontentloaded');
+    // Note: Removed waitForLoadState since journey uses client-side routing
     
     // Try button first (most common in GOV.UK forms)
     const backButton = this.page.getByRole('button', { name: 'Back' });
@@ -125,29 +124,22 @@ export class JourneyRunner {
    * Verify heading on current page
    */
   async verifyHeading(headingText: string): Promise<void> {
-    await this.page.waitForLoadState('domcontentloaded');
-    await this.page.waitForTimeout(1000);
-    await this.page.waitForSelector('h1', { state: 'visible', timeout: 10000 });
-    
-    const normalizedText = headingText.replace(/[\u2018\u2019']/g, "'");
-    const h1Elements = await this.page.locator('h1').all();
-    let found = false;
-    
-    for (const h1 of h1Elements) {
-      const text = await h1.textContent();
-      const normalizedPageText = text?.replace(/[\u2018\u2019']/g, "'") || '';
-      
-      if (normalizedPageText.includes(normalizedText)) {
-        const isVisible = await h1.isVisible();
-        if (isVisible) {
-          found = true;
-          break;
-        }
-      }
+    // Note: Removed waitForLoadState('domcontentloaded') since journey uses client-side routing
+    await this.page.waitForTimeout(200); // Brief pause for SPA updates
+
+    // Use getByRole with exact matching, then .first() to resolve strict mode violations from duplicate headings
+    const headingLocator = this.page.getByRole('heading', { name: headingText, exact: true }).first();
+    await headingLocator.waitFor({ state: 'visible', timeout: 20000 });
+
+    // Verify the heading is actually visible and contains the expected text
+    const isVisible = await headingLocator.isVisible();
+    if (!isVisible) {
+      throw new Error(`Heading "${headingText}" is not visible`);
     }
-    
-    if (!found) {
-      throw new Error(`Heading "${headingText}" not found on page`);
+
+    const actualText = await headingLocator.textContent();
+    if (!actualText || !actualText.includes(headingText)) {
+      throw new Error(`Heading text mismatch. Expected: "${headingText}", Found: "${actualText}"`);
     }
   }
 

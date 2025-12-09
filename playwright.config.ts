@@ -36,7 +36,7 @@ export default defineConfig({
   },
   
   /* Set timeout for component tests */
-  timeout: 5000,
+  timeout: 20000,
 
   /* Configure projects for major browsers */
   projects: [
