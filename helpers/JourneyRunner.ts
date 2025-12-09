@@ -42,8 +42,8 @@ export class JourneyRunner {
           const inputType = await labelLocator.getAttribute('type');
           
           if (inputType === 'radio') {
-            // Handle radio buttons - check the option
-            await labelLocator.check();
+            // Handle radio buttons - use getByRole for more reliable selection
+            await this.page.getByRole('radio', { name: field }).check();
           } else {
             // Handle text inputs
             await this.page.getByLabel(field, { exact: false }).fill(value as string);
@@ -74,15 +74,10 @@ export class JourneyRunner {
    * Click the Continue button
    */
   async continue(): Promise<void> {
-    // Wait for any pending validation to complete
     await this.page.waitForTimeout(500);
     
-    // Click the continue button directly
     const continueButton = this.page.getByRole('button', { name: 'Continue' });
     await continueButton.click();
-    
-    // Wait for navigation or content change
-    await this.page.waitForTimeout(2000);
     
     this.currentStep++;
   }
@@ -130,17 +125,11 @@ export class JourneyRunner {
    * Verify heading on current page
    */
   async verifyHeading(headingText: string): Promise<void> {
-    // Wait for page to be stable after navigation
     await this.page.waitForLoadState('domcontentloaded');
-    await this.page.waitForTimeout(1000); // Additional wait for SPA updates
-    
-    // Wait for h1 to be present and visible
+    await this.page.waitForTimeout(1000);
     await this.page.waitForSelector('h1', { state: 'visible', timeout: 10000 });
     
-    // Normalize apostrophes (handle smart quotes)
     const normalizedText = headingText.replace(/[\u2018\u2019']/g, "'");
-    
-    // Get all h1 elements and check their text content
     const h1Elements = await this.page.locator('h1').all();
     let found = false;
     
@@ -158,10 +147,7 @@ export class JourneyRunner {
     }
     
     if (!found) {
-      // Debug: log what headings are actually on the page
-      const allHeadings = await this.page.locator('h1').allTextContents();
-      console.log('Available headings on page:', allHeadings);
-      throw new Error(`Heading "${headingText}" not found on page. Available headings: ${allHeadings.join(', ')}`);
+      throw new Error(`Heading "${headingText}" not found on page`);
     }
   }
 
@@ -222,9 +208,46 @@ export class JourneyRunner {
    * Fill a date field with proper object format for GOV.UK date components
    */
   private async fillDateField(fieldName: string, value: string | string[] | { day: string; month: string; year: string }): Promise<void> {
-    // For now, skip date field filling as the component has strict validation
-    // that rejects all string inputs. The date field might be pre-filled or optional.
-    console.log(`Skipping date field "${fieldName}" due to component validation constraints`);
-    return;
+    let dateObj: { day: string; month: string; year: string };
+
+    if (typeof value === 'object' && !Array.isArray(value)) {
+      // Already in object format
+      dateObj = value;
+    } else if (typeof value === 'string') {
+      // Parse string format (supports '01/01/1990' or '01 01 1990')
+      const parts = value.split(/[\/ ]/).filter(p => p.length > 0);
+      if (parts.length === 3) {
+        dateObj = { day: parts[0], month: parts[1], year: parts[2] };
+      } else {
+        throw new Error(`Invalid date format for ${fieldName}: ${value}. Expected DD/MM/YYYY or DD MM YYYY`);
+      }
+    } else {
+      throw new Error(`Unsupported date value type for ${fieldName}: ${typeof value}`);
+    }
+
+    // Try separate fields first (GOV.UK standard dateInput component)
+    try {
+      // For dateInput components, the inputs have IDs like {fieldId}-day, {fieldId}-month, {fieldId}-year
+      // But fieldName might be "Date of birth" while the ID is "date-of-birth"
+      // Try to find inputs by their pattern
+      const dayInput = this.page.locator(`input[id*="-day"]`).first();
+      const monthInput = this.page.locator(`input[id*="-month"]`).first();
+      const yearInput = this.page.locator(`input[id*="-year"]`).first();
+      
+      await dayInput.fill(dateObj.day);
+      await monthInput.fill(dateObj.month);
+      await yearInput.fill(dateObj.year);
+    } catch (error) {
+      // If separate fields don't exist, try the legacy approach
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.log(`Separate date fields not found for ${fieldName}, trying fallback:`, errorMessage);
+      try {
+        const input = this.page.getByLabel(fieldName, { exact: false });
+        await input.fill(`${dateObj.day}/${dateObj.month}/${dateObj.year}`);
+      } catch (fallbackError) {
+        console.log(`All date filling methods failed for ${fieldName}`);
+        throw fallbackError;
+      }
+    }
   }
 }

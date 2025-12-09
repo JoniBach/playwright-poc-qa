@@ -24,13 +24,20 @@ export class TestDataFactory {
    * Generate random UK postcode
    */
   static generatePostcode(): string {
-    const areas = ['SW1A', 'EC1A', 'W1A', 'NW1', 'SE1'];
-    const area = areas[Math.floor(Math.random() * areas.length)];
-    const number = Math.floor(Math.random() * 9) + 1;
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const letter1 = letters[Math.floor(Math.random() * letters.length)];
-    const letter2 = letters[Math.floor(Math.random() * letters.length)];
-    return `${area} ${number}${letter1}${letter2}`;
+    // Use common, definitely valid UK postcodes from major cities
+    const validPostcodes = [
+      'B1 1AA',   // Birmingham
+      'M1 1AA',   // Manchester
+      'LS1 1AA',  // Leeds
+      'L1 1AA',   // Liverpool
+      'S1 1AA',   // Sheffield
+      'CF10 1AA', // Cardiff
+      'G1 1AA',   // Glasgow
+      'EH1 1AA',  // Edinburgh
+      'BT1 1AA',  // Belfast
+      'BS1 1AA'   // Bristol
+    ];
+    return validPostcodes[Math.floor(Math.random() * validPostcodes.length)];
   }
 
   /**
