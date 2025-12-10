@@ -38,7 +38,7 @@ export class JourneyRunner {
       } else {
         // Check if this is a radio button by looking for a radio input associated with this label
         try {
-          const labelLocator = this.page.getByLabel(field, { exact: false });
+          const labelLocator = this.page.getByLabel(field, { exact: true });
           const inputType = await labelLocator.getAttribute('type');
           
           if (inputType === 'radio') {
@@ -46,11 +46,11 @@ export class JourneyRunner {
             await this.page.getByRole('radio', { name: field }).check();
           } else {
             // Handle text inputs
-            await this.page.getByLabel(field, { exact: false }).fill(value as string);
+            await this.page.getByLabel(field, { exact: true }).fill(value as string);
           }
         } catch (error) {
           // If we can't determine the input type, assume it's a text input
-          await this.page.getByLabel(field, { exact: false }).fill(value as string);
+          await this.page.getByLabel(field, { exact: true }).fill(value as string);
         }
       }
     }
@@ -60,14 +60,14 @@ export class JourneyRunner {
    * Select a radio option
    */
   async selectRadio(label: string): Promise<void> {
-    await this.page.getByLabel(label, { exact: false }).check();
+    await this.page.getByLabel(label, { exact: true }).check();
   }
 
   /**
    * Check a checkbox
    */
   async checkCheckbox(label: string): Promise<void> {
-    await this.page.getByLabel(label, { exact: false }).check();
+    await this.page.getByLabel(label, { exact: true }).check();
   }
 
   /**
@@ -234,7 +234,7 @@ export class JourneyRunner {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.log(`Separate date fields not found for ${fieldName}, trying fallback:`, errorMessage);
       try {
-        const input = this.page.getByLabel(fieldName, { exact: false });
+        const input = this.page.getByLabel(fieldName, { exact: true });
         await input.fill(`${dateObj.day}/${dateObj.month}/${dateObj.year}`);
       } catch (fallbackError) {
         console.log(`All date filling methods failed for ${fieldName}`);
