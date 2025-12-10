@@ -37,20 +37,26 @@ export class JourneyRunner {
         await this.fillDateField(field, value);
       } else {
         // Check if this is a radio button by looking for a radio input associated with this label
-        try {
-          const labelLocator = this.page.getByLabel(field, { exact: true });
-          const inputType = await labelLocator.getAttribute('type');
-          
-          if (inputType === 'radio') {
-            // Handle radio buttons - use getByRole for more reliable selection
-            await this.page.getByRole('radio', { name: field }).check();
-          } else {
-            // Handle text inputs
+        // Handle legend:option format for unique radio identification
+        if (field.includes(': ')) {
+          const [legend, option] = field.split(': ');
+          await this.page.getByRole('group', { name: legend }).getByRole('radio', { name: option }).check();
+        } else {
+          try {
+            const labelLocator = this.page.getByLabel(field, { exact: true });
+            const inputType = await labelLocator.getAttribute('type');
+
+            if (inputType === 'radio') {
+              // Handle radio buttons - use getByRole for more reliable selection
+              await this.page.getByRole('radio', { name: field }).check();
+            } else {
+              // Handle text inputs
+              await this.page.getByLabel(field, { exact: true }).fill(value as string);
+            }
+          } catch (error) {
+            // If we can't determine the input type, assume it's a text input
             await this.page.getByLabel(field, { exact: true }).fill(value as string);
           }
-        } catch (error) {
-          // If we can't determine the input type, assume it's a text input
-          await this.page.getByLabel(field, { exact: true }).fill(value as string);
         }
       }
     }
@@ -75,10 +81,10 @@ export class JourneyRunner {
    */
   async continue(): Promise<void> {
     await this.page.waitForTimeout(500);
-    
+
     const continueButton = this.page.getByRole('button', { name: 'Continue' });
     await continueButton.click();
-    
+
     this.currentStep++;
   }
 
@@ -90,13 +96,13 @@ export class JourneyRunner {
   async submit(): Promise<void> {
     // Click "Accept and send" button
     await this.page.getByRole('button', { name: /Accept and send|Continue/i }).click();
-    
+
     // Wait for the confirmation page to load (client-side routing, URL doesn't change)
     // Look for confirmation heading or panel
     await this.page.waitForSelector('h1:has-text("Application submitted"), .govuk-panel__title', {
       timeout: 20000
     });
-    
+
     this.currentStep++;
   }
 
@@ -105,18 +111,18 @@ export class JourneyRunner {
    */
   async goBack(): Promise<void> {
     // Note: Removed waitForLoadState since journey uses client-side routing
-    
+
     // Try button first (most common in GOV.UK forms)
     const backButton = this.page.getByRole('button', { name: 'Back' });
     const backButtonVisible = await backButton.isVisible().catch(() => false);
-    
+
     if (backButtonVisible) {
       await backButton.click();
     } else {
       // Fall back to link
       await this.page.getByRole('link', { name: 'Back' }).click();
     }
-    
+
     this.currentStep--;
   }
 
@@ -182,9 +188,9 @@ export class JourneyRunner {
    * Take screenshot of current step
    */
   async screenshot(name: string): Promise<void> {
-    await this.page.screenshot({ 
+    await this.page.screenshot({
       path: `test-results/screenshots/${name}-step-${this.currentStep}.png`,
-      fullPage: true 
+      fullPage: true
     });
   }
 
@@ -225,7 +231,7 @@ export class JourneyRunner {
       const dayInput = this.page.locator(`input[id*="-day"]`).first();
       const monthInput = this.page.locator(`input[id*="-month"]`).first();
       const yearInput = this.page.locator(`input[id*="-year"]`).first();
-      
+
       await dayInput.fill(dateObj.day);
       await monthInput.fill(dateObj.month);
       await yearInput.fill(dateObj.year);
