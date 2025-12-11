@@ -40,7 +40,7 @@ export class JourneyRunner {
         // Handle legend:option format for unique radio identification
         if (field.includes(': ')) {
           const [legend, option] = field.split(': ');
-          await this.page.getByRole('group', { name: legend }).getByRole('radio', { name: option }).check();
+          await this.page.getByRole('group', { name: legend }).getByRole('radio', { name: option, exact: true }).check();
         } else {
           try {
             const labelLocator = this.page.getByLabel(field, { exact: true });
@@ -48,7 +48,7 @@ export class JourneyRunner {
 
             if (inputType === 'radio') {
               // Handle radio buttons - use getByRole for more reliable selection
-              await this.page.getByRole('radio', { name: field }).check();
+              await this.page.getByRole('radio', { name: field, exact: true }).check();
             } else {
               // Handle text inputs
               await this.page.getByLabel(field, { exact: true }).fill(value as string);
@@ -199,7 +199,9 @@ export class JourneyRunner {
    */
   private isDateField(fieldName: string): boolean {
     const lowerField = fieldName.toLowerCase();
-    return lowerField.includes('date') || lowerField.includes('birth') || lowerField.includes('dob');
+    return lowerField.includes('date') &&
+           !lowerField.includes('certificate') &&
+           !lowerField.includes('passport');
   }
 
   /**
