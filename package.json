@@ -4,6 +4,7 @@
   "description": "Comprehensive Playwright QA test suite",
   "main": "index.js",
   "scripts": {
+    "postinstall": "npx playwright install",
     "test": "playwright test --grep-invert @component",
     "test:all": "playwright test",
     "test:ui": "playwright test --ui",
@@ -28,7 +29,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.10.0",
     "@playwright/test": "^1.56.1",
-    "@types/node": "^24.10.1"
+    "@types/node": "^24.10.4"
   },
   "dependencies": {
     "zod": "^4.1.12"

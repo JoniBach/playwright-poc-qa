@@ -13,6 +13,8 @@ This workspace contains Playwright tests for validating the GOV.UK journey appli
 
 ### Local Development
 
+By default, tests run against `http://localhost:5173` in local development.
+
 To run all tests:
 
 ```bash
@@ -36,6 +38,16 @@ To run tests with UI:
 ```bash
 npm run test:ui
 ```
+
+### Using a Different Base URL
+
+You can override the base URL using the `BASE_URL` environment variable:
+
+```bash
+BASE_URL=https://playwright-poc-ui.vercel.app npm test
+```
+
+This is useful for testing against staging or production environments.
 
 ## CI/CD Integration
 
