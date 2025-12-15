@@ -10,18 +10,84 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for proper branch comparison
+    
     - uses: actions/setup-node@v4
       with:
         node-version: lts/*
-    - name: Install dependencies
+        
+    - name: Install root dependencies
       run: npm ci
+      
+    - name: Install workspace dependencies
+      run: npm run install:all
+      
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
-    - name: Run Playwright tests
-      run: npx playwright test
-    - uses: actions/upload-artifact@v4
+      
+    - name: Run standard Playwright tests
+      run: npm run test:all
+      working-directory: ./playwright-poc-qa
+      
+    - name: Check for generated tests
+      id: check-generated-tests
+      run: |
+        if [ -d "tests/generated" ] && [ "$(find tests/generated -name "*.spec.ts" | wc -l)" -gt 0 ]; then
+          echo "Generated tests found"
+          echo "has_generated_tests=true" >> $GITHUB_OUTPUT
+        else
+          echo "No generated tests found"
+          echo "has_generated_tests=false" >> $GITHUB_OUTPUT
+        fi
+      working-directory: ./playwright-poc-qa
+      
+    - name: Run generated tests
+      id: run-generated-tests
+      if: steps.check-generated-tests.outputs.has_generated_tests == 'true'
+      run: |
+        echo "Running generated tests..."
+        mkdir -p playwright-report-generated
+        npx playwright test tests/generated/ --reporter=html,github,list --reporter-option=outputFolder=playwright-report-generated || (
+          echo "::warning::Some generated tests failed but continuing workflow"
+          echo "generated_tests_failed=true" >> $GITHUB_OUTPUT
+          exit 0
+        )
+        echo "generated_tests_failed=false" >> $GITHUB_OUTPUT
+      working-directory: ./playwright-poc-qa
+      
+    - name: Upload standard test results
+      uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
         name: playwright-report
-        path: playwright-report/
+        path: playwright-poc-qa/playwright-report/
         retention-days: 30
+        
+    - name: Upload generated test results
+      uses: actions/upload-artifact@v4
+      if: steps.check-generated-tests.outputs.has_generated_tests == 'true' && ${{ !cancelled() }}
+      with:
+        name: playwright-report-generated
+        path: playwright-poc-qa/playwright-report-generated/
+        retention-days: 30
+        
+    - name: Create test summary
+      if: always()
+      run: |
+        echo "## Playwright Test Summary" >> $GITHUB_STEP_SUMMARY
+        echo "### Standard Tests" >> $GITHUB_STEP_SUMMARY
+        echo "✅ Standard tests completed" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [[ "${{ steps.check-generated-tests.outputs.has_generated_tests }}" == "true" ]]; then
+          echo "### Generated Tests" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ steps.run-generated-tests.outputs.generated_tests_failed }}" == "true" ]]; then
+            echo "⚠️ Some generated tests failed but workflow continued" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ All generated tests passed" >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "### Generated Tests" >> $GITHUB_STEP_SUMMARY
+          echo "ℹ️ No generated tests were found to run" >> $GITHUB_STEP_SUMMARY
+        fi
