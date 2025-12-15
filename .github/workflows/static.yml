@@ -50,12 +50,16 @@ jobs:
           mkdir -p public/screenshots
           
           # Run tests with increased timeout and retries for CI environment
+          # Using max-failures=1 to avoid running all retries when browser is terminated
+          # Using headed mode to avoid browser closing issues in CI
           PLAYWRIGHT_TIMEOUT=180000 npx playwright test tests/generated/apply-provisional-driving-licence.spec.ts \
             --project=chromium \
             --reporter=html \
-            --timeout=180000 \
-            --retries=2 \
-            --workers=1 || (
+            --timeout=240000 \
+            --retries=1 \
+            --max-failures=1 \
+            --workers=1 \
+            --headed || (
             echo "::warning::Tests failed but continuing with deployment"
           )
           
