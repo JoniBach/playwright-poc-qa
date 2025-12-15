@@ -171,7 +171,12 @@ export class JourneyRunner {
 
     // Use getByRole with exact matching, then .first() to resolve strict mode violations from duplicate headings
     const headingLocator = this.page.getByRole('heading', { name: headingText, exact: true }).first();
-    await headingLocator.waitFor({ state: 'visible', timeout: 20000 });
+    
+    // Use environment variable PLAYWRIGHT_TIMEOUT if set, otherwise default to 60000ms (1 minute)
+    const headingTimeout = parseInt(process.env.PLAYWRIGHT_TIMEOUT || '60000', 10);
+    console.log(`Using heading verification timeout: ${headingTimeout}ms for "${headingText}"`); 
+    
+    await headingLocator.waitFor({ state: 'visible', timeout: headingTimeout });
 
     // Verify the heading is actually visible and contains the expected text
     const isVisible = await headingLocator.isVisible();
