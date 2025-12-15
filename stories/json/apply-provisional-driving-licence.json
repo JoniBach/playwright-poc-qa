@@ -1,0 +1,133 @@
+{
+  "journeyId": "apply-provisional-driving-licence",
+  "journeyTitle": "Apply for a Provisional Driving Licence",
+  "generatedAt": "2025-12-15T12:45:50.317Z",
+  "totalPages": 15,
+  "totalComponents": 50,
+  "summary": {
+    "totalStories": 1,
+    "totalAcceptanceCriteria": 1,
+    "totalTestScenarios": 1,
+    "complexityBreakdown": {
+      "medium": 1
+    },
+    "componentCoverage": {}
+  },
+  "stories": [
+    {
+      "id": "apply-provisional-driving-licence-test-story",
+      "journeyId": "apply-provisional-driving-licence",
+      "title": "Test Story for apply-provisional-driving-licence",
+      "asA": "User",
+      "iWant": "to complete the journey",
+      "soThat": "I can submit my application",
+      "description": "Automated test story for apply-provisional-driving-licence",
+      "acceptanceCriteria": [
+        {
+          "given": "User is on the journey start page",
+          "when": "User completes the journey",
+          "then": "Journey completes successfully",
+          "priority": "must",
+          "testable": true,
+          "tags": [
+            "automation"
+          ]
+        }
+      ],
+      "testScenarios": [
+        {
+          "id": "test-scenario-1",
+          "title": "Test scenario",
+          "description": "Basic test scenario for the journey",
+          "steps": [
+            "Navigate to journey start page",
+            "Complete all required fields",
+            "Submit the journey"
+          ],
+          "expectedResult": "Journey completes successfully",
+          "pageIds": [
+            "start",
+            "eligibility-age",
+            "eligibility-residency",
+            "personal-name",
+            "personal-details",
+            "identity-document",
+            "contact-address",
+            "previous-addresses",
+            "contact-details",
+            "vehicle-categories",
+            "medical-conditions",
+            "declarations",
+            "payment",
+            "check-answers",
+            "confirmation"
+          ],
+          "componentTypes": [
+            "heading",
+            "paragraph",
+            "insetText",
+            "radios",
+            "textInput",
+            "checkboxes",
+            "warningText"
+          ],
+          "priority": "high",
+          "tags": [
+            "end-to-end"
+          ]
+        }
+      ],
+      "pages": [
+        "start",
+        "eligibility-age",
+        "eligibility-residency",
+        "personal-name",
+        "personal-details",
+        "identity-document",
+        "contact-address",
+        "previous-addresses",
+        "contact-details",
+        "vehicle-categories",
+        "medical-conditions",
+        "declarations",
+        "payment",
+        "check-answers",
+        "confirmation"
+      ],
+      "components": [
+        {
+          "type": "heading",
+          "count": 14
+        },
+        {
+          "type": "paragraph",
+          "count": 10
+        },
+        {
+          "type": "insetText",
+          "count": 2
+        },
+        {
+          "type": "radios",
+          "count": 6
+        },
+        {
+          "type": "textInput",
+          "count": 15
+        },
+        {
+          "type": "checkboxes",
+          "count": 2
+        },
+        {
+          "type": "warningText",
+          "count": 1
+        }
+      ],
+      "estimatedComplexity": "medium",
+      "tags": [
+        "generated"
+      ]
+    }
+  ]
+}
