@@ -1,5 +1,5 @@
-# Simple workflow for deploying static content to GitHub Pages
-name: Deploy static content to Pages
+# Workflow for deploying Playwright test reports to GitHub Pages
+name: Deploy Playwright Reports to Pages
 
 on:
   # Runs on pushes targeting the default branch
@@ -22,22 +22,85 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Single deploy job since we're just deploying
+  # Run tests and deploy reports
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    env:
+      BASE_URL: https://playwright-poc-ui.vercel.app
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+        
+      - name: Check for generated tests
+        id: check-generated-tests
+        run: |
+          if [ -d "tests/generated" ] && [ "$(ls -1 tests/generated/*.spec.ts 2>/dev/null | wc -l)" -gt 0 ]; then
+            echo "Generated tests found"
+            echo "has_generated_tests=true" >> $GITHUB_OUTPUT
+          else
+            echo "No generated tests found"
+            echo "has_generated_tests=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Run generated tests
+        id: run-generated-tests
+        if: steps.check-generated-tests.outputs.has_generated_tests == 'true'
+        run: |
+          echo "Running generated tests..."
+          mkdir -p playwright-report
+          npx playwright test tests/generated/ --project=chromium --reporter=html --output=playwright-report || (
+            echo "::warning::Some generated tests failed but continuing workflow"
+            echo "generated_tests_failed=true" >> $GITHUB_OUTPUT
+            exit 0
+          )
+          echo "generated_tests_failed=false" >> $GITHUB_OUTPUT
+        env:
+          BASE_URL: ${{ env.BASE_URL }}
+      
       - name: Setup Pages
         uses: actions/configure-pages@v5
+        
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
-          path: '.'
+          path: 'playwright-report'
+          
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        
+      - name: Create test summary
+        if: always()
+        run: |
+          echo "## Playwright Test Summary" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ steps.check-generated-tests.outputs.has_generated_tests }}" == "true" ]]; then
+            echo "### Generated Tests" >> $GITHUB_STEP_SUMMARY
+            if [[ "${{ steps.run-generated-tests.outputs.generated_tests_failed }}" == "true" ]]; then
+              echo "⚠️ Some generated tests failed but workflow continued" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "✅ All generated tests passed" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 📊 Test Report" >> $GITHUB_STEP_SUMMARY
+            echo "View the full test report here: ${{ steps.deployment.outputs.page_url }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### Generated Tests" >> $GITHUB_STEP_SUMMARY
+            echo "ℹ️ No generated tests were found to run" >> $GITHUB_STEP_SUMMARY
+          fi
