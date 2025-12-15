@@ -8,6 +8,7 @@ This workspace contains Playwright tests for validating the GOV.UK journey appli
   - `tests/generated/` - Auto-generated tests from journey configurations
   - `tests/components/` - Component-level tests
   - `tests/journeys/` - Manual journey tests
+  - 
 
 ## Running Tests
 
