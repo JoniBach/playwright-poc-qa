@@ -100,8 +100,12 @@ export class JourneyRunner {
     try {
       // Wait for the confirmation page to load (client-side routing, URL doesn't change)
       // Look for confirmation heading or panel with increased timeout for CI environments
+      // Use environment variable PLAYWRIGHT_TIMEOUT if set, otherwise default to 120000ms (2 minutes)
+      const submissionTimeout = parseInt(process.env.PLAYWRIGHT_TIMEOUT || '120000', 10);
+      console.log(`Using submission timeout: ${submissionTimeout}ms`);
+      
       await this.page.waitForSelector('h1:has-text("Application submitted"), .govuk-panel__title, h1:has-text("Confirmation"), h1:has-text("Thank you")', {
-        timeout: 60000 // Increased from 20000ms to 60000ms
+        timeout: submissionTimeout
       });
     } catch (error) {
       // If we can't find the exact heading, check if we're on a new page after submission
