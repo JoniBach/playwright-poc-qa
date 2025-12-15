@@ -14,8 +14,8 @@ type CustomFixtures = {
 
 export const test = base.extend<CustomFixtures>({
   // Journey runner fixture - provides helper for running multi-step journeys
-  journeyRunner: async ({ page }, use) => {
-    const runner = new JourneyRunner(page);
+  journeyRunner: async ({ page, baseURL }, use) => {
+    const runner = new JourneyRunner(page, baseURL);
     await use(runner);
   },
 
