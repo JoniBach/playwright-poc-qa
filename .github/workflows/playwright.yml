@@ -46,7 +46,7 @@ jobs:
       run: |
         echo "Running generated tests..."
         mkdir -p playwright-report-generated
-        npx playwright test tests/generated/ --project=chromium --reporter=html --reporter-option=outputFolder=playwright-report-generated || (
+        npx playwright test tests/generated/ --project=chromium --reporter=html --output=playwright-report-generated || (
           echo "::warning::Some generated tests failed but continuing workflow"
           echo "generated_tests_failed=true" >> $GITHUB_OUTPUT
           exit 0
