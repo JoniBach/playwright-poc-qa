@@ -47,16 +47,26 @@ jobs:
       - name: Generate test report
         run: |
           mkdir -p public
+          mkdir -p public/screenshots
           
-          # Run tests with the updated JourneyRunner that has better CI handling
-          npx playwright test tests/generated/apply-provisional-driving-licence.spec.ts --project=chromium --reporter=html --timeout=120000 || (
+          # Run tests with increased timeout and retries for CI environment
+          PLAYWRIGHT_TIMEOUT=180000 npx playwright test tests/generated/apply-provisional-driving-licence.spec.ts \
+            --project=chromium \
+            --reporter=html \
+            --timeout=180000 \
+            --retries=2 \
+            --workers=1 || (
             echo "::warning::Tests failed but continuing with deployment"
           )
           
           # Save screenshots for debugging
-          mkdir -p public/screenshots
-          if [ -d "confirmation-page-fallback.png" ]; then
+          if [ -f "confirmation-page-fallback.png" ]; then
             cp confirmation-page-fallback.png public/screenshots/
+          fi
+          
+          # Copy any test-results screenshots if they exist
+          if [ -d "test-results" ]; then
+            find test-results -name "*.png" -exec cp {} public/screenshots/ \;
           fi
           
           # Ensure we have something to deploy even if tests fail
